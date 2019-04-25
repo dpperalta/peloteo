@@ -1,6 +1,8 @@
 require('./config/config');
 
 const express = require('express');
+const mongoose = require('mongoose');
+
 const app = express();
 
 // Body Parser
@@ -10,33 +12,15 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // Parse application/json
 app.use(bodyParser.json());
 
-
 app.use(express.static(__dirname + '/public'));
 
-app.get('/usuario', (req, res) => {
-    res.json('get Usuario');
-});
+app.use(require('./routes/usuario'));
+app.use(require('./routes/rol'));
+app.use(require('./routes/persona'));
 
-app.post('/usuario', (req, res) => {
-
-    let body = req.body;
-
-    res.json({
-        body
-    });
-    console.log('post Usuario');
-});
-
-app.put('/usuario/:id', (req, res) => {
-    let id = req.params.id;
-    res.json({
-        id,
-    });
-    console.log('put Usuario');
-});
-
-app.delete('/usuario', (req, res) => {
-    res.json('delete Usuario');
+mongoose.connect('mongodb://localhost:27017/peloteo', (err, res) => {
+    if (err) throw err;
+    console.log('Base de Datos ONLINE');
 });
 
 app.listen(process.env.PORT, () => {
