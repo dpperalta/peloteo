@@ -4,9 +4,11 @@ const _ = require('underscore');
 
 const Persona = require('../models/persona');
 
+const { verificaToken, verificaAdmin } = require('../middlewares/autenticacion');
+
 const app = express();
 
-app.get('/persona', (req, res) => {
+app.get('/persona', verificaToken, (req, res) => {
     let desde = req.query.desde;
     desde = Number(desde);
     let limitePagina = req.query.limitePagina;
@@ -40,7 +42,7 @@ app.get('/persona', (req, res) => {
         });
 });
 
-app.post('/persona', function(req, res) {
+app.post('/persona', [verificaToken, verificaAdmin], function(req, res) {
 
     let body = req.body;
 
@@ -71,7 +73,7 @@ app.post('/persona', function(req, res) {
 
 });
 
-app.put('/persona/:id', (req, res) => {
+app.put('/persona/:id', verificaToken, (req, res) => {
     let id = req.params.id;
     let body = _.pick(req.body, ['nombres', 'apellidos', 'fechaNacimiento', 'apodo', 'telefono', 'celular', 'direccion', 'cedula']);
     let nombresCompletos = body.nombres + ' ' + body.apellidos;
@@ -99,7 +101,7 @@ app.put('/persona/:id', (req, res) => {
     });
 });
 
-app.delete('/persona/:id', (req, res) => {
+app.delete('/persona/:id', [verificaToken, verificaAdmin], (req, res) => {
     let id = req.params.id;
 
     Persona.findByIdAndDelete(id, (err, personaBorrada) => {

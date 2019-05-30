@@ -5,14 +5,19 @@ const _ = require('underscore');
 
 const Usuario = require('../models/usuario');
 
+const { verificaToken, verificaAdmin } = require('../middlewares/autenticacion');
+
 const app = express();
 
-app.get('/usuario', function(req, res) {
+app.get('/usuario', [verificaToken, verificaAdmin], (req, res) => {
 
     let desde = req.query.desde;
     desde = Number(desde);
     let limitePagina = req.query.limitePagina;
     limitePagina = Number(limitePagina);
+
+    rol = req.usuario.rol;
+    persona = req.usuario.persona;
 
     Usuario.find({})
         .skip(desde)
@@ -25,22 +30,19 @@ app.get('/usuario', function(req, res) {
                 });
             }
 
-            Usuario.count({}, (err, total) => {
+            Usuario.countDocuments({}, (err, total) => {
                 res.json({
                     ok: true,
                     usuarios,
-                    total
+                    total,
                 })
             })
-
         });
 });
 
-app.post('/usuario', (req, res) => {
+app.post('/usuario', [verificaToken, verificaAdmin], (req, res) => {
 
     let body = req.body;
-    //let persona = req.params._id
-    //let rol = req.params._id
 
     let usuario = new Usuario({
         mail: body.mail,
@@ -70,16 +72,17 @@ app.post('/usuario', (req, res) => {
 
 });
 
-app.put('/usuario/:id', (req, res) => {
+app.put('/usuario/:id', verificaToken, (req, res) => {
     let id = req.params.id;
     let body = _.pick(req.body, ['estado', 'img', 'fechaBaja', 'pass']);
+
     let nuevaPass = body.pass;
     if (nuevaPass) {
         nuevaPass = bcrypt.hashSync(nuevaPass, 10);
     }
     body.pass = nuevaPass
 
-    Usuario.findByIdAndUpdate(id, body, { new: true, runValidators: false }, (err, usuarioDB) => {
+    Usuario.findOneAndUpdate(id, body, { new: true, runValidators: false }, (err, usuarioDB) => {
         if (err) {
             return res.status(400).json({
                 ok: false,
@@ -102,7 +105,7 @@ app.put('/usuario/:id', (req, res) => {
     });
 });
 
-app.delete('/usuario/:id', (req, res) => {
+app.delete('/usuario/:id', [verificaToken, verificaAdmin], (req, res) => {
     let id = req.params.id;
 
     Usuario.findByIdAndDelete(id, (err, usuarioBorrado) => {
@@ -127,5 +130,24 @@ app.delete('/usuario/:id', (req, res) => {
     });
 
 });
+
+app.get('/usuario/:id', verificaToken, (req, res) => {
+    let id = req.params.id;
+    Usuario.findById(id)
+        .populate('persona')
+        .populate('rol')
+        .exec((err, usuarioCompleto) => {
+            if (err) {
+                return res.status(500).json({
+                    ok: false,
+                    message: 'No existe el ID proporcionado'
+                });
+            }
+            res.json({
+                ok: true,
+                usuarioCompleto
+            })
+        });
+})
 
 module.exports = app;

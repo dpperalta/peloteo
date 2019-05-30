@@ -6,7 +6,9 @@ const Rol = require('../models/rol');
 
 const app = express();
 
-app.get('/rol', (req, res) => {
+const { verificaAdmin, verificaToken } = require('../middlewares/autenticacion');
+
+app.get('/rol', [verificaToken, verificaAdmin], (req, res) => {
     let desde = req.query.desde;
     desde = Number(desde);
     let limitePagina = req.query.limitePagina;
@@ -40,7 +42,33 @@ app.get('/rol', (req, res) => {
         });
 });
 
-app.post('/rol', (req, res) => {
+app.get('/rol/:rol', verificaToken, (req, res) => {
+
+    let rol = req.params.rol;
+
+    Rol.find({ "nombre": rol })
+        .exec((err, idRol) => {
+            if (err) {
+                return res.status(500).json({
+                    ok: false,
+                    message: 'Ha existido un error al recuperar el rol'
+                });
+            }
+            if (idRol.length = 0) {
+                return res.status(400).json({
+                    ok: false,
+                    message: 'El nombre de rol proporcionado no existe'
+                })
+            }
+            console.log(idRol);
+            res.json({
+                ok: true,
+                idRol
+            });
+        });
+});
+
+app.post('/rol', [verificaToken, verificaAdmin], (req, res) => {
 
     let body = req.body;
 
@@ -64,43 +92,7 @@ app.post('/rol', (req, res) => {
     });
 });
 
-/*
-app.post('/usuario', (req, res) => {
-
-    let body = req.body;
-    //let persona = req.params._id
-    //let rol = req.params._id
-
-    let usuario = new Usuario({
-        mail: body.mail,
-        pass: bcrypt.hashSync(body.pass, 10),
-        fechaAlta: body.fechaAlta,
-        estado: body.estado,
-        img: body.img,
-        fechaBaja: body.fechaBaja,
-        google: body.google,
-        rol: body.rol,
-        persona: body.persona
-    });
-
-    usuario.save((err, usuarioDB) => {
-        if (err) {
-            return res.status(400).json({
-                ok: false,
-                err
-            });
-        }
-        usuario.pass = null;
-        res.json({
-            ok: true,
-            usuario: usuarioDB
-        });
-    });
-
-});
-*/
-
-app.put('/rol/:id', (req, res) => {
+app.put('/rol/:id', [verificaToken, verificaAdmin], (req, res) => {
     let id = req.params.id;
     let body = _.pick(req.body, ['nombre', 'descripcion', 'nivelPermisos']);
 
@@ -126,7 +118,7 @@ app.put('/rol/:id', (req, res) => {
     });
 });
 
-app.delete('/rol/:id', (req, res) => {
+app.delete('/rol/:id', [verificaToken, verificaAdmin], (req, res) => {
     let id = req.params.id;
 
     Rol.findByIdAndDelete(id, (err, rolBorrado) => {

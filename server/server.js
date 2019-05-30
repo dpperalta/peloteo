@@ -14,11 +14,9 @@ app.use(bodyParser.json());
 
 app.use(express.static(__dirname + '/public'));
 
-app.use(require('./routes/usuario'));
-app.use(require('./routes/rol'));
-app.use(require('./routes/persona'));
+app.use(require('./routes/index'));
 
-mongoose.connect('mongodb://localhost:27017/peloteo', (err, res) => {
+mongoose.connect('mongodb://localhost:27017/peloteo', { useNewUrlParser: true }, (err, res) => {
     if (err) throw err;
     console.log('Base de Datos ONLINE');
 });
@@ -26,3 +24,11 @@ mongoose.connect('mongodb://localhost:27017/peloteo', (err, res) => {
 app.listen(process.env.PORT, () => {
     console.log('Escuchando peticiones en el puerto', process.env.PORT);
 });
+
+/*
+Posibles calendarios:
+npm schedulator
+npm schedule-planner
+npm calendar-js
+npm full-calendar
+*/
